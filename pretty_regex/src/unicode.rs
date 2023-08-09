@@ -1,4 +1,4 @@
-use crate::{PrettyRegex, SingleCharacter, Standart};
+use crate::{CharClass, PrettyRegex, Standart};
 
 pub enum Script {
     Common,
@@ -49,7 +49,7 @@ pub enum Script {
 }
 
 impl Script {
-    pub fn to_regex(self) -> PrettyRegex<SingleCharacter<Standart>> {
+    pub fn to_regex(self) -> PrettyRegex<CharClass<Standart>> {
         PrettyRegex::from(match self {
             Self::Common => r"\p{Common}",
             Self::Arabic => r"\p{Arabic}",
@@ -100,6 +100,12 @@ impl Script {
     }
 }
 
+impl From<Script> for PrettyRegex<CharClass<Standart>> {
+    fn from(value: Script) -> Self {
+        value.to_regex()
+    }
+}
+
 pub enum Category {
     Letter,
     LowercaseLetter,
@@ -144,7 +150,7 @@ pub enum Category {
 impl Category {
     #[inline]
     #[must_use]
-    pub fn to_regex(self) -> PrettyRegex<SingleCharacter<Standart>> {
+    pub fn to_regex(self) -> PrettyRegex<CharClass<Standart>> {
         PrettyRegex::from(match self {
             Self::Letter => r"\p{Letter}",
             Self::LowercaseLetter => r"\p{Lowercase_Letter}",
@@ -185,5 +191,11 @@ impl Category {
             Self::Surrogate => r"\p{Surrogate}",
             Self::Unassigned => r"\p{Unassigned}",
         })
+    }
+}
+
+impl From<Category> for PrettyRegex<CharClass<Standart>> {
+    fn from(value: Category) -> Self {
+        value.to_regex()
     }
 }

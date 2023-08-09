@@ -1,4 +1,5 @@
 use regex::{escape, Regex};
+use unicode::Category;
 
 use std::{
     fmt::Display,
@@ -6,7 +7,10 @@ use std::{
     ops::{Add, Range, RangeInclusive},
 };
 
+pub mod logic;
 pub mod unicode;
+
+pub use logic::*;
 
 /// Represents the state when regular expression is for a single-character ASCII class
 /// (the kind surrounded by colons and two layers of square brackets).
@@ -17,10 +21,10 @@ pub struct Ascii;
 pub struct Custom;
 
 /// Represents the state when regular expression corresponds to a single-character character.
-pub struct SingleCharacter<T>(PhantomData<T>);
+pub struct CharClass<T>(PhantomData<T>);
 
 /// Represents the state when regular expression is a standard single-character class
-/// (the kind that starts with a backslash followed by a letter)
+/// (the kind in most cases starts with a backslash followed by a letter)
 ///
 /// E.g. `\d`, `\p{Arabic}`.
 pub struct Standart;
@@ -47,29 +51,6 @@ impl<T> PrettyRegex<T> {
         Self(String::new(), PhantomData)
     }
 
-    /// Creates a new [`PrettyRegex`] from a string (unescaped).
-    #[inline]
-    #[must_use]
-    pub fn from(regex: impl Into<String>) -> Self {
-        Self(regex.into(), PhantomData)
-    }
-
-    /// Creates a new [`PrettyRegex`] from a unicode category.
-    #[inline]
-    #[must_use]
-    pub fn from_unicode_category(
-        category: unicode::Category,
-    ) -> PrettyRegex<SingleCharacter<Standart>> {
-        category.to_regex()
-    }
-
-    /// Creates a new [`PrettyRegex`] from a unicode script.
-    #[inline]
-    #[must_use]
-    pub fn from_unicode_script(script: unicode::Script) -> PrettyRegex<SingleCharacter<Standart>> {
-        script.to_regex()
-    }
-
     /// Converts the [`PrettyRegex`] into a real [`Regex`].
     #[inline]
     #[must_use]
@@ -93,15 +74,24 @@ impl<T> PrettyRegex<T> {
     /// ```
     /// use pretty_regex::just;
     ///
-    /// let regex = just("a").and_then(just("b")).to_regex_or_panic();
+    /// let regex = just("a").then(just("b")).to_regex_or_panic();
     ///
     /// assert!(regex.is_match("ab"));
     /// assert!(!regex.is_match("ac"));
     /// ```
     #[inline]
     #[must_use]
-    pub fn and_then(self, then: PrettyRegex<T>) -> Self {
-        Self(self.0 + &then.0, PhantomData)
+    pub fn then<U>(self, then: PrettyRegex<U>) -> PrettyRegex<Chain> {
+        PrettyRegex::from(self.0 + &then.0)
+    }
+}
+
+impl<T, R> From<T> for PrettyRegex<R>
+where
+    T: Into<String>,
+{
+    fn from(value: T) -> Self {
+        Self(value.into(), PhantomData)
     }
 }
 
@@ -119,17 +109,11 @@ impl<T> From<PrettyRegex<T>> for Regex {
     }
 }
 
-impl<T, U> Add<PrettyRegex<U>> for PrettyRegex<T> {
+impl<L, R> Add<PrettyRegex<R>> for PrettyRegex<L> {
     type Output = PrettyRegex<Chain>;
 
-    fn add(self, rhs: PrettyRegex<U>) -> Self::Output {
+    fn add(self, rhs: PrettyRegex<R>) -> Self::Output {
         PrettyRegex::from(format!("{}{}", self, rhs))
-    }
-}
-
-impl<T> From<String> for PrettyRegex<T> {
-    fn from(value: String) -> Self {
-        Self::from(value)
     }
 }
 
@@ -143,7 +127,14 @@ pub fn just(text: impl Into<String>) -> PrettyRegex<Text> {
     PrettyRegex::from(format!("(?:{})", escape(&*text.into())))
 }
 
-pub fn nonescaped(text: impl Into<String>) -> PrettyRegex<Ascii> {
+/// ```
+/// use pretty_regex::nonescaped;
+///
+/// let regex = nonescaped(r"^\d$").to_regex_or_panic();
+/// assert!(!regex.is_match("a"));
+/// assert!(regex.is_match("2"));
+/// ```
+pub fn nonescaped(text: impl Into<String>) -> PrettyRegex<Chain> {
     PrettyRegex::from(format!("(?:{})", &*text.into()))
 }
 
@@ -157,7 +148,7 @@ pub fn nonescaped(text: impl Into<String>) -> PrettyRegex<Ascii> {
 /// ```
 #[inline]
 #[must_use]
-pub fn any() -> PrettyRegex<SingleCharacter<Standart>> {
+pub fn any() -> PrettyRegex<CharClass<Standart>> {
     PrettyRegex::from(r".")
 }
 
@@ -172,7 +163,7 @@ pub fn any() -> PrettyRegex<SingleCharacter<Standart>> {
 /// ```
 #[inline]
 #[must_use]
-pub fn digit() -> PrettyRegex<SingleCharacter<Standart>> {
+pub fn digit() -> PrettyRegex<CharClass<Standart>> {
     PrettyRegex::from(r"\d")
 }
 
@@ -186,31 +177,31 @@ pub fn digit() -> PrettyRegex<SingleCharacter<Standart>> {
 /// assert!(not_digit().to_regex_or_panic().is_match("a"));
 #[inline]
 #[must_use]
-pub fn not_digit() -> PrettyRegex<SingleCharacter<Standart>> {
+pub fn not_digit() -> PrettyRegex<CharClass<Standart>> {
     PrettyRegex::from(r"\D")
 }
 
-pub fn word() -> PrettyRegex<SingleCharacter<Standart>> {
+pub fn word() -> PrettyRegex<CharClass<Standart>> {
     PrettyRegex::from(r"\w")
 }
 
-pub fn not_word() -> PrettyRegex<SingleCharacter<Standart>> {
+pub fn not_word() -> PrettyRegex<CharClass<Standart>> {
     PrettyRegex::from(r"\W")
 }
 
-pub fn whitespace() -> PrettyRegex<SingleCharacter<Standart>> {
+pub fn whitespace() -> PrettyRegex<CharClass<Standart>> {
     PrettyRegex::from(r"\s")
 }
 
-pub fn not_whitespace() -> PrettyRegex<SingleCharacter<Standart>> {
+pub fn not_whitespace() -> PrettyRegex<CharClass<Standart>> {
     PrettyRegex::from(r"\S")
 }
 
-pub fn alphabetic() -> PrettyRegex<Ascii> {
+pub fn ascii_alphabetic() -> PrettyRegex<CharClass<Ascii>> {
     PrettyRegex::from(r"[[:alpha:]]")
 }
 
-pub fn ascii_alphanumeric() -> PrettyRegex<Ascii> {
+pub fn ascii_alphanumeric() -> PrettyRegex<CharClass<Ascii>> {
     PrettyRegex::from(r"[[:alnum:]]")
 }
 
@@ -227,8 +218,8 @@ pub fn ascii_alphanumeric() -> PrettyRegex<Ascii> {
 /// ```
 #[inline]
 #[must_use]
-pub fn lowercase() -> PrettyRegex<Ascii> {
-    PrettyRegex::from(r"\p{Ll}")
+pub fn lowercase() -> PrettyRegex<CharClass<Standart>> {
+    PrettyRegex::from(Category::LowercaseLetter)
 }
 
 /// Matches ascii lowercase characters (`a-z`).
@@ -245,7 +236,7 @@ pub fn lowercase() -> PrettyRegex<Ascii> {
 /// ```
 #[inline]
 #[must_use]
-pub fn ascii_lowercase() -> PrettyRegex<Ascii> {
+pub fn ascii_lowercase() -> PrettyRegex<CharClass<Ascii>> {
     PrettyRegex::from(r"[[:lower:]]")
 }
 
@@ -259,7 +250,7 @@ pub fn ascii_lowercase() -> PrettyRegex<Ascii> {
 /// assert!(!within(&['a', 'b']).to_regex_or_panic().is_match("c"));
 #[inline]
 #[must_use]
-pub fn within<T>(set: &[T]) -> PrettyRegex<SingleCharacter<Custom>>
+pub fn within<T>(set: &[T]) -> PrettyRegex<CharClass<Custom>>
 where
     T: Display,
 {
@@ -280,7 +271,7 @@ where
 /// ```
 #[inline]
 #[must_use]
-pub fn without<T>(set: &[T]) -> PrettyRegex<SingleCharacter<Custom>>
+pub fn without<T>(set: &[T]) -> PrettyRegex<CharClass<Custom>>
 where
     T: Display,
 {
@@ -300,7 +291,7 @@ where
 /// ```
 #[inline]
 #[must_use]
-pub fn within_char_range(range: RangeInclusive<char>) -> PrettyRegex<SingleCharacter<Custom>> {
+pub fn within_char_range(range: RangeInclusive<char>) -> PrettyRegex<CharClass<Custom>> {
     PrettyRegex::from(format!("[{}-{}]", range.start(), range.end()))
 }
 
@@ -314,8 +305,64 @@ pub fn within_char_range(range: RangeInclusive<char>) -> PrettyRegex<SingleChara
 /// ```
 #[inline]
 #[must_use]
-pub fn without_char_range(range: RangeInclusive<char>) -> PrettyRegex<SingleCharacter<Custom>> {
+pub fn without_char_range(range: RangeInclusive<char>) -> PrettyRegex<CharClass<Custom>> {
     PrettyRegex::from(format!("[^{}-{}]", range.start(), range.end()))
+}
+
+/// ```
+/// use pretty_regex::{just, beginning};
+///
+/// let regex = beginning().then(just("foo")).to_regex_or_panic();
+///
+/// assert!(regex.is_match("foo"));
+/// assert!(!regex.is_match("ffoo"));
+/// ```
+#[inline]
+#[must_use]
+pub fn beginning() -> PrettyRegex<CharClass<Standart>> {
+    PrettyRegex::from(r"^")
+}
+
+/// ```
+/// use pretty_regex::{just, ending};
+///
+/// let regex = just("foo").then(ending()).to_regex_or_panic();
+///
+/// assert!(regex.is_match("foo"));
+/// assert!(!regex.is_match("foof"));
+/// ```
+#[inline]
+#[must_use]
+pub fn ending() -> PrettyRegex<CharClass<Standart>> {
+    PrettyRegex::from(r"$")
+}
+
+/// ```
+/// use pretty_regex::{just, text_beginning};
+///
+/// let regex = text_beginning().then(just("foo")).to_regex_or_panic();
+///
+/// assert!(regex.is_match("foo"));
+/// assert!(!regex.is_match("ffoo"));
+/// ```
+#[inline]
+#[must_use]
+pub fn text_beginning() -> PrettyRegex<CharClass<Standart>> {
+    PrettyRegex::from(r"\A")
+}
+
+/// ```
+/// use pretty_regex::{just, text_ending};
+///
+/// let regex = just("foo").then(text_ending()).to_regex_or_panic();
+///
+/// assert!(regex.is_match("foo"));
+/// assert!(!regex.is_match("foof"));
+/// ```
+#[inline]
+#[must_use]
+pub fn text_ending() -> PrettyRegex<CharClass<Standart>> {
+    PrettyRegex::from(r"\z")
 }
 
 impl<T> PrettyRegex<T> {
@@ -340,7 +387,7 @@ impl<T> PrettyRegex<T> {
     /// use pretty_regex::just;
     ///
     /// let regex = just("foo")
-    ///     .repeats_at_least_n_times(2)
+    ///     .repeats(2)
     ///     .to_regex_or_panic();
     ///
     /// assert!(!regex.is_match("foo"));
@@ -349,7 +396,7 @@ impl<T> PrettyRegex<T> {
     /// ```
     #[inline]
     #[must_use]
-    pub fn repeats_at_least_n_times(self, times: usize) -> PrettyRegex<Quantifier> {
+    pub fn repeats(self, times: usize) -> PrettyRegex<Quantifier> {
         PrettyRegex::from(format!("(?:{}){{{},}}", self, times))
     }
 
