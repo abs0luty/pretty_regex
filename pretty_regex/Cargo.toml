@@ -1,7 +1,7 @@
 [package]
 name = "pretty_regex"
-version = "0.1.1"
-authors = ["abs0luty"]
+version = "0.1.2"
+authors = ["Adi Salimgereyev"]
 description = "🧶 Elegant and readable way of writing regular expressions"
 readme = "../README.md"
 repository = "https://github.com/abs0luty/pretty-regex"
