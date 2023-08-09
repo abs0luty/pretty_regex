@@ -69,11 +69,12 @@ impl<T> PrettyRegex<T> {
         self.to_regex().unwrap()
     }
 
-    /// Allows to create [`PrettyRegex`]-s that made up from 2 or more.
+    /// Allows to chain [`PrettyRegex`].
+    ///
+    /// # Example
     ///
     /// ```
-    /// use pretty_regex::just;
-    ///
+    /// # use pretty_regex::just;
     /// let regex = just("a").then(just("b")).to_regex_or_panic();
     ///
     /// assert!(regex.is_match("ab"));
@@ -96,6 +97,20 @@ where
 }
 
 impl PrettyRegex<Quantifier> {
+    /// Adds a lazy modifier to [`Quantifier`].
+    ///
+    /// ```
+    /// # use pretty_regex::just;
+    /// let regex = just("a").repeats_at_least(3).lazy();
+    /// ```
+    ///
+    /// Not everything can be lazy. For instance, this spinnet of code doesn't
+    /// compile:
+    ///
+    /// ```compile_fail
+    /// # use pretty_regex::just;
+    /// let regex = just("a").lazy();
+    /// ```
     #[inline]
     #[must_use]
     pub fn lazy(&self) -> PrettyRegex<Chain> {
@@ -112,6 +127,17 @@ impl<T> From<PrettyRegex<T>> for Regex {
 impl<L, R> Add<PrettyRegex<R>> for PrettyRegex<L> {
     type Output = PrettyRegex<Chain>;
 
+    /// Allows to chain [`PrettyRegex`].
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use pretty_regex::just;
+    /// let regex = (just("a") + just("b")).to_regex_or_panic();
+    ///
+    /// assert!(regex.is_match("ab"));
+    /// assert!(!regex.is_match("ac"));
+    /// ```
     fn add(self, rhs: PrettyRegex<R>) -> Self::Output {
         PrettyRegex::from(format!("{}{}", self, rhs))
     }
@@ -123,13 +149,26 @@ impl<T> Display for PrettyRegex<T> {
     }
 }
 
+/// Adds a matching text into a [`PrettyRegex`].
+///
+/// # Example
+///
+/// ```
+/// # use pretty_regex::just;
+/// assert!(just("a").to_regex_or_panic().is_match("a"));
+/// assert!(!just("a").to_regex_or_panic().is_match("b"));
+/// ```
 pub fn just(text: impl Into<String>) -> PrettyRegex<Text> {
     PrettyRegex::from(format!("(?:{})", escape(&*text.into())))
 }
 
-/// ```
-/// use pretty_regex::nonescaped;
+/// Makes regex from unescaped text. It allows to add a regex string directly into a
+/// [`PrettyRegex`] object.
 ///
+/// # Example
+///
+/// ```
+/// # use pretty_regex::nonescaped;
 /// let regex = nonescaped(r"^\d$").to_regex_or_panic();
 /// assert!(!regex.is_match("a"));
 /// assert!(regex.is_match("2"));
@@ -140,9 +179,10 @@ pub fn nonescaped(text: impl Into<String>) -> PrettyRegex<Chain> {
 
 /// Matches any character, except for newline (`\n`).
 ///
-/// ```
-/// use pretty_regex::any;
+/// # Example
 ///
+/// ```
+/// # use pretty_regex::any;
 /// assert!(!any().to_regex_or_panic().is_match("\n"));
 /// assert!(any().to_regex_or_panic().is_match("a"));
 /// ```
@@ -154,11 +194,12 @@ pub fn any() -> PrettyRegex<CharClass<Standart>> {
 
 /// Matches digit character class (`\d`).
 ///
-/// ```
-/// use pretty_regex::digit;
+/// # Example
 ///
+/// ```
+/// # use pretty_regex::digit;
 /// assert!(digit().to_regex_or_panic().is_match("1"));
-/// assert!(digit().to_regex_or_panic().is_match("2"));
+/// assert!(digit().to_regex_or_panic().is_match("7"));
 /// assert!(!digit().to_regex_or_panic().is_match("a"));
 /// ```
 #[inline]
@@ -167,27 +208,111 @@ pub fn digit() -> PrettyRegex<CharClass<Standart>> {
     PrettyRegex::from(r"\d")
 }
 
+/// Matches word character class (`\w`) - any alphanumeric character or underscore (`_`).
+///
+/// # Example
+///
+/// ```
+/// # use pretty_regex::word;
+/// assert!(word().to_regex_or_panic().is_match("a"));
+/// assert!(word().to_regex_or_panic().is_match("2"));
+/// assert!(word().to_regex_or_panic().is_match("_"));
+/// assert!(!word().to_regex_or_panic().is_match("?"));
+/// ```
 pub fn word() -> PrettyRegex<CharClass<Standart>> {
     PrettyRegex::from(r"\w")
 }
 
+/// Matches a word boundary (`\b`).
+pub fn word_boundary() -> PrettyRegex<CharClass<Standart>> {
+    PrettyRegex::from(r"\b")
+}
+
+/// Matches whitespace character class (`\s`).
+///
+/// # Example
+///
+/// ```
+/// # use pretty_regex::whitespace;
+/// assert!(whitespace().to_regex_or_panic().is_match("\n"));
+/// assert!(whitespace().to_regex_or_panic().is_match(" "));
+/// assert!(!whitespace().to_regex_or_panic().is_match("a"));
+/// ```
 pub fn whitespace() -> PrettyRegex<CharClass<Standart>> {
     PrettyRegex::from(r"\s")
 }
 
+/// Matches ascii alphabetic characters (`a-zA-Z`).
+///
+/// # Example
+///
+/// ```
+/// # use pretty_regex::ascii_alphabetic;
+/// assert!(ascii_alphabetic().to_regex_or_panic().is_match("a"));
+/// assert!(ascii_alphabetic().to_regex_or_panic().is_match("B"));
+/// assert!(!ascii_alphabetic().to_regex_or_panic().is_match("1"));
+/// assert!(!ascii_alphabetic().to_regex_or_panic().is_match(" "));
+/// ```
 pub fn ascii_alphabetic() -> PrettyRegex<CharClass<Ascii>> {
     PrettyRegex::from(r"[[:alpha:]]")
 }
 
+/// Matches ascii alphanumeric characters (`a-zA-Z0-9`).
+///
+/// # Example
+///
+/// ```
+/// # use pretty_regex::ascii_alphanumeric;
+/// assert!(ascii_alphanumeric().to_regex_or_panic().is_match("a"));
+/// assert!(ascii_alphanumeric().to_regex_or_panic().is_match("Z"));
+/// assert!(ascii_alphanumeric().to_regex_or_panic().is_match("7"));
+/// assert!(!ascii_alphanumeric().to_regex_or_panic().is_match(" "));
+/// ```
 pub fn ascii_alphanumeric() -> PrettyRegex<CharClass<Ascii>> {
     PrettyRegex::from(r"[[:alnum:]]")
 }
 
-/// Matches lowercase characters (in `Ll` Unicode category).
+/// Matches alphabetic characters (in `Letter`  Unicode category).
+///
+/// # Example
 ///
 /// ```
-/// use pretty_regex::lowercase;
+/// # use pretty_regex::alphabetic;
+/// assert!(alphabetic().to_regex_or_panic().is_match("a"));
+/// assert!(alphabetic().to_regex_or_panic().is_match("ю"));
+/// assert!(alphabetic().to_regex_or_panic().is_match("A"));
+/// assert!(!alphabetic().to_regex_or_panic().is_match("5"));
+/// assert!(!alphabetic().to_regex_or_panic().is_match("!"));
+/// ```
+pub fn alphabetic() -> PrettyRegex<CharClass<Standart>> {
+    PrettyRegex::from(Category::Letter)
+}
+
+/// Matches alphanumeric characters (in `Letter` and `Number` Unicode categories).
 ///
+/// # Example
+///
+/// ```
+/// # use pretty_regex::alphanumeric;
+/// assert!(alphanumeric().to_regex_or_panic().is_match("a"));
+/// assert!(alphanumeric().to_regex_or_panic().is_match("ю"));
+/// assert!(alphanumeric().to_regex_or_panic().is_match("A"));
+/// assert!(alphanumeric().to_regex_or_panic().is_match("5"));
+/// assert!(!alphanumeric().to_regex_or_panic().is_match("!"));
+/// ```
+pub fn alphanumeric() -> PrettyRegex<Chain> {
+    one_of(&[
+        PrettyRegex::from(Category::Letter),
+        PrettyRegex::from(Category::Number),
+    ])
+}
+
+/// Matches lowercase characters (in `Lowercase_Letter` Unicode category).
+///
+/// # Example
+///
+/// ```
+/// # use pretty_regex::lowercase;
 /// assert!(lowercase().to_regex_or_panic().is_match("a"));
 /// assert!(lowercase().to_regex_or_panic().is_match("ю"));
 /// assert!(!lowercase().to_regex_or_panic().is_match("A"));
@@ -202,9 +327,10 @@ pub fn lowercase() -> PrettyRegex<CharClass<Standart>> {
 
 /// Matches ascii lowercase characters (`a-z`).
 ///
-/// ```
-/// use pretty_regex::ascii_lowercase;
+/// # Example
 ///
+/// ```
+/// # use pretty_regex::ascii_lowercase;
 /// assert!(ascii_lowercase().to_regex_or_panic().is_match("a"));
 /// assert!(ascii_lowercase().to_regex_or_panic().is_match("b"));
 /// assert!(!ascii_lowercase().to_regex_or_panic().is_match("ю"));
@@ -220,9 +346,10 @@ pub fn ascii_lowercase() -> PrettyRegex<CharClass<Ascii>> {
 
 /// Matches anything within a specified set of characters.
 ///
-/// ```
-/// use pretty_regex::within;
+/// # Example
 ///
+/// ```
+/// # use pretty_regex::within;
 /// assert!(within(&['a', 'b']).to_regex_or_panic().is_match("a"));
 /// assert!(within(&['a', 'b']).to_regex_or_panic().is_match("b"));
 /// assert!(!within(&['a', 'b']).to_regex_or_panic().is_match("c"));
@@ -240,9 +367,10 @@ where
 
 /// Matches anything outside of a specified set of characters.
 ///
-/// ```
-/// use pretty_regex::without;
+/// # Example
 ///
+/// ```
+/// # use pretty_regex::without;
 /// assert!(!without(&['a', 'b']).to_regex_or_panic().is_match("a"));
 /// assert!(!without(&['a', 'b']).to_regex_or_panic().is_match("b"));
 /// assert!(without(&['a', 'b']).to_regex_or_panic().is_match("c"));
@@ -261,9 +389,10 @@ where
 
 /// Matches characters within a given range.
 ///
-/// ```
-/// use pretty_regex::within_char_range;
+/// # Example
 ///
+/// ```
+/// # use pretty_regex::within_char_range;
 /// assert!(within_char_range('a'..='z').to_regex_or_panic().is_match("a"));
 /// assert!(!within_char_range('a'..='z').to_regex_or_panic().is_match("Z"));
 /// ```
@@ -275,9 +404,10 @@ pub fn within_char_range(range: RangeInclusive<char>) -> PrettyRegex<CharClass<C
 
 /// Matches characters outside of a given range.
 ///
-/// ```
-/// use pretty_regex::without_char_range;
+/// # Example
 ///
+/// ```
+/// # use pretty_regex::without_char_range;
 /// assert!(!without_char_range('a'..='z').to_regex_or_panic().is_match("a"));
 /// assert!(without_char_range('a'..='z').to_regex_or_panic().is_match("Z"));
 /// ```
@@ -287,9 +417,12 @@ pub fn without_char_range(range: RangeInclusive<char>) -> PrettyRegex<CharClass<
     PrettyRegex::from(format!("[^{}-{}]", range.start(), range.end()))
 }
 
-/// ```
-/// use pretty_regex::{just, beginning};
+/// Matches the beginning of the text or SOF with multi-line mode off (`^`).
 ///
+/// # Example
+///
+/// ```
+/// # use pretty_regex::{just, beginning};
 /// let regex = beginning().then(just("foo")).to_regex_or_panic();
 ///
 /// assert!(regex.is_match("foo"));
@@ -301,9 +434,12 @@ pub fn beginning() -> PrettyRegex<CharClass<Standart>> {
     PrettyRegex::from(r"^")
 }
 
-/// ```
-/// use pretty_regex::{just, ending};
+/// Matches the end of the text or EOF with multi-line mode on (`$`).
 ///
+/// # Example
+///
+/// ```
+/// # use pretty_regex::{just, ending};
 /// let regex = just("foo").then(ending()).to_regex_or_panic();
 ///
 /// assert!(regex.is_match("foo"));
@@ -315,9 +451,12 @@ pub fn ending() -> PrettyRegex<CharClass<Standart>> {
     PrettyRegex::from(r"$")
 }
 
-/// ```
-/// use pretty_regex::{just, text_beginning};
+/// Matches the beginning of the text even with multi-line mode on (`\A`).
 ///
+/// # Example
+///
+/// ```
+/// # use pretty_regex::{just, text_beginning};
 /// let regex = text_beginning().then(just("foo")).to_regex_or_panic();
 ///
 /// assert!(regex.is_match("foo"));
@@ -329,9 +468,12 @@ pub fn text_beginning() -> PrettyRegex<CharClass<Standart>> {
     PrettyRegex::from(r"\A")
 }
 
-/// ```
-/// use pretty_regex::{just, text_ending};
+/// Matches the end of the text even with multi-line mode on (`\z`).
 ///
+/// # Example
+///
+/// ```
+/// # use pretty_regex::{just, text_ending};
 /// let regex = just("foo").then(text_ending()).to_regex_or_panic();
 ///
 /// assert!(regex.is_match("foo"));
@@ -344,11 +486,14 @@ pub fn text_ending() -> PrettyRegex<CharClass<Standart>> {
 }
 
 impl<T> PrettyRegex<T> {
-    /// ```
-    /// use pretty_regex::just;
+    /// Matches the pattern a given amount of times.
     ///
+    /// # Example
+    ///
+    /// ```
+    /// # use pretty_regex::just;
     /// let regex = just("foo")
-    ///     .repeats_exactly_n_times(3)
+    ///     .repeats(3)
     ///     .to_regex_or_panic();
     ///
     /// assert!(regex.is_match("foofoofoo"));
@@ -357,15 +502,18 @@ impl<T> PrettyRegex<T> {
     /// ```
     #[inline]
     #[must_use]
-    pub fn repeats_exactly_n_times(self, times: usize) -> PrettyRegex<Quantifier> {
+    pub fn repeats(self, times: usize) -> PrettyRegex<Quantifier> {
         PrettyRegex::from(format!("(?:{}){{{}}}", self, times))
     }
 
-    /// ```
-    /// use pretty_regex::just;
+    /// Matches the pattern at least a given amount of times.
     ///
+    /// # Example
+    ///
+    /// ```
+    /// # use pretty_regex::just;
     /// let regex = just("foo")
-    ///     .repeats(2)
+    ///     .repeats_at_least(2)
     ///     .to_regex_or_panic();
     ///
     /// assert!(!regex.is_match("foo"));
@@ -374,13 +522,16 @@ impl<T> PrettyRegex<T> {
     /// ```
     #[inline]
     #[must_use]
-    pub fn repeats(self, times: usize) -> PrettyRegex<Quantifier> {
+    pub fn repeats_at_least(self, times: usize) -> PrettyRegex<Quantifier> {
         PrettyRegex::from(format!("(?:{}){{{},}}", self, times))
     }
 
-    /// ```
-    /// use pretty_regex::just;
+    /// Matches the pattern one or more times.
     ///
+    /// # Example
+    ///
+    /// ```
+    /// # use pretty_regex::just;
     /// let regex = just("foo")
     ///     .repeats_one_or_more_times()
     ///     .to_regex_or_panic();
@@ -395,9 +546,12 @@ impl<T> PrettyRegex<T> {
         PrettyRegex::from(format!("(?:{})+", self))
     }
 
-    /// ```
-    /// use pretty_regex::just;
+    /// Matches the pattern optionally (zero or one time).
     ///
+    /// # Example
+    ///
+    /// ```
+    /// # use pretty_regex::just;
     /// let regex = just("foo")
     ///     .optional()
     ///     .to_regex_or_panic();
@@ -411,9 +565,12 @@ impl<T> PrettyRegex<T> {
         PrettyRegex::from(format!("(?:{})?", self))
     }
 
-    /// ```
-    /// use pretty_regex::just;
+    /// Matches the pattern zero or more times.
     ///
+    /// # Example
+    ///
+    /// ```
+    /// # use pretty_regex::just;
     /// let regex = just("foo")
     ///     .repeats_zero_or_more_times()
     ///     .to_regex_or_panic();
@@ -428,9 +585,12 @@ impl<T> PrettyRegex<T> {
         PrettyRegex::from(format!("(?:{})*", self))
     }
 
-    /// ```
-    /// use pretty_regex::just;
+    /// Matches the pattern `n` times where `n` is within a given range.
     ///
+    /// # Example
+    ///
+    /// ```
+    /// # use pretty_regex::just;
     /// let regex = just("f")
     ///     .repeats_n_times_within(3..5)
     ///     .to_regex_or_panic();
@@ -484,6 +644,7 @@ impl<T> PrettyRegex<T> {
     ///
     /// Here we can give captures a specified names, to then match on them:
     ///
+    ///
     /// ```
     /// # use pretty_regex::{digit, just};
     /// let regex = digit().repeats(2).named_capture("month")
@@ -501,9 +662,12 @@ impl<T> PrettyRegex<T> {
     }
 }
 
-/// ```
-/// use pretty_regex::{one_of, just};
+/// Establishes an OR relationship between regular expressions.
 ///
+/// # Example
+///
+/// ```
+/// # use pretty_regex::{one_of, just};
 /// let regex = one_of(&[just("hi"), just("bar")]).to_regex_or_panic();
 ///
 /// assert!(regex.is_match("hi"));
