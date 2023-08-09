@@ -125,7 +125,7 @@ pub struct CharClass<T>(PhantomData<T>);
 /// (the kind in most cases starts with a backslash followed by a letter)
 ///
 /// E.g. `\d`, `\p{Arabic}`.
-pub struct Standart;
+pub struct Standard;
 
 /// Represents the state when regular expression is a literal string of characters.
 pub struct Text;
@@ -256,6 +256,8 @@ impl<T> Display for PrettyRegex<T> {
 /// assert!(just("a").to_regex_or_panic().is_match("a"));
 /// assert!(!just("a").to_regex_or_panic().is_match("b"));
 /// ```
+#[inline]
+#[must_use]
 pub fn just(text: impl Into<String>) -> PrettyRegex<Text> {
     PrettyRegex::from(format!("(?:{})", escape(&*text.into())))
 }
@@ -271,6 +273,8 @@ pub fn just(text: impl Into<String>) -> PrettyRegex<Text> {
 /// assert!(!regex.is_match("a"));
 /// assert!(regex.is_match("2"));
 /// ```
+#[inline]
+#[must_use]
 pub fn nonescaped(text: impl Into<String>) -> PrettyRegex<Chain> {
     PrettyRegex::from(format!("(?:{})", &*text.into()))
 }
@@ -286,7 +290,7 @@ pub fn nonescaped(text: impl Into<String>) -> PrettyRegex<Chain> {
 /// ```
 #[inline]
 #[must_use]
-pub fn any() -> PrettyRegex<CharClass<Standart>> {
+pub fn any() -> PrettyRegex<CharClass<Standard>> {
     PrettyRegex::from(r".")
 }
 
@@ -302,7 +306,7 @@ pub fn any() -> PrettyRegex<CharClass<Standart>> {
 /// ```
 #[inline]
 #[must_use]
-pub fn digit() -> PrettyRegex<CharClass<Standart>> {
+pub fn digit() -> PrettyRegex<CharClass<Standard>> {
     PrettyRegex::from(r"\d")
 }
 
@@ -317,12 +321,16 @@ pub fn digit() -> PrettyRegex<CharClass<Standart>> {
 /// assert!(word().to_regex_or_panic().is_match("_"));
 /// assert!(!word().to_regex_or_panic().is_match("?"));
 /// ```
-pub fn word() -> PrettyRegex<CharClass<Standart>> {
+#[inline]
+#[must_use]
+pub fn word() -> PrettyRegex<CharClass<Standard>> {
     PrettyRegex::from(r"\w")
 }
 
 /// Matches a word boundary (`\b`).
-pub fn word_boundary() -> PrettyRegex<CharClass<Standart>> {
+#[inline]
+#[must_use]
+pub fn word_boundary() -> PrettyRegex<CharClass<Standard>> {
     PrettyRegex::from(r"\b")
 }
 
@@ -336,7 +344,9 @@ pub fn word_boundary() -> PrettyRegex<CharClass<Standart>> {
 /// assert!(whitespace().to_regex_or_panic().is_match(" "));
 /// assert!(!whitespace().to_regex_or_panic().is_match("a"));
 /// ```
-pub fn whitespace() -> PrettyRegex<CharClass<Standart>> {
+#[inline]
+#[must_use]
+pub fn whitespace() -> PrettyRegex<CharClass<Standard>> {
     PrettyRegex::from(r"\s")
 }
 
@@ -351,6 +361,8 @@ pub fn whitespace() -> PrettyRegex<CharClass<Standart>> {
 /// assert!(!ascii_alphabetic().to_regex_or_panic().is_match("1"));
 /// assert!(!ascii_alphabetic().to_regex_or_panic().is_match(" "));
 /// ```
+#[inline]
+#[must_use]
 pub fn ascii_alphabetic() -> PrettyRegex<CharClass<Ascii>> {
     PrettyRegex::from(r"[[:alpha:]]")
 }
@@ -366,6 +378,8 @@ pub fn ascii_alphabetic() -> PrettyRegex<CharClass<Ascii>> {
 /// assert!(ascii_alphanumeric().to_regex_or_panic().is_match("7"));
 /// assert!(!ascii_alphanumeric().to_regex_or_panic().is_match(" "));
 /// ```
+#[inline]
+#[must_use]
 pub fn ascii_alphanumeric() -> PrettyRegex<CharClass<Ascii>> {
     PrettyRegex::from(r"[[:alnum:]]")
 }
@@ -382,7 +396,9 @@ pub fn ascii_alphanumeric() -> PrettyRegex<CharClass<Ascii>> {
 /// assert!(!alphabetic().to_regex_or_panic().is_match("5"));
 /// assert!(!alphabetic().to_regex_or_panic().is_match("!"));
 /// ```
-pub fn alphabetic() -> PrettyRegex<CharClass<Standart>> {
+#[inline]
+#[must_use]
+pub fn alphabetic() -> PrettyRegex<CharClass<Standard>> {
     PrettyRegex::from(Category::Letter)
 }
 
@@ -398,6 +414,8 @@ pub fn alphabetic() -> PrettyRegex<CharClass<Standart>> {
 /// assert!(alphanumeric().to_regex_or_panic().is_match("5"));
 /// assert!(!alphanumeric().to_regex_or_panic().is_match("!"));
 /// ```
+#[inline]
+#[must_use]
 pub fn alphanumeric() -> PrettyRegex<Chain> {
     one_of(&[
         PrettyRegex::from(Category::Letter),
@@ -419,7 +437,7 @@ pub fn alphanumeric() -> PrettyRegex<Chain> {
 /// ```
 #[inline]
 #[must_use]
-pub fn lowercase() -> PrettyRegex<CharClass<Standart>> {
+pub fn lowercase() -> PrettyRegex<CharClass<Standard>> {
     PrettyRegex::from(Category::LowercaseLetter)
 }
 
@@ -528,7 +546,7 @@ pub fn without_char_range(range: RangeInclusive<char>) -> PrettyRegex<CharClass<
 /// ```
 #[inline]
 #[must_use]
-pub fn beginning() -> PrettyRegex<CharClass<Standart>> {
+pub fn beginning() -> PrettyRegex<CharClass<Standard>> {
     PrettyRegex::from(r"^")
 }
 
@@ -545,7 +563,7 @@ pub fn beginning() -> PrettyRegex<CharClass<Standart>> {
 /// ```
 #[inline]
 #[must_use]
-pub fn ending() -> PrettyRegex<CharClass<Standart>> {
+pub fn ending() -> PrettyRegex<CharClass<Standard>> {
     PrettyRegex::from(r"$")
 }
 
@@ -562,7 +580,7 @@ pub fn ending() -> PrettyRegex<CharClass<Standart>> {
 /// ```
 #[inline]
 #[must_use]
-pub fn text_beginning() -> PrettyRegex<CharClass<Standart>> {
+pub fn text_beginning() -> PrettyRegex<CharClass<Standard>> {
     PrettyRegex::from(r"\A")
 }
 
@@ -579,7 +597,7 @@ pub fn text_beginning() -> PrettyRegex<CharClass<Standart>> {
 /// ```
 #[inline]
 #[must_use]
-pub fn text_ending() -> PrettyRegex<CharClass<Standart>> {
+pub fn text_ending() -> PrettyRegex<CharClass<Standard>> {
     PrettyRegex::from(r"\z")
 }
 
@@ -727,6 +745,8 @@ impl<T> PrettyRegex<T> {
     /// assert_eq!(captures.get(1).unwrap().as_str(), "08");
     /// assert_eq!(captures.get(2).unwrap().as_str(), "05");
     /// ```
+    #[inline]
+    #[must_use]
     pub fn unnamed_capture(self) -> PrettyRegex<Chain> {
         PrettyRegex::from(format!("({})", self))
     }
@@ -755,6 +775,8 @@ impl<T> PrettyRegex<T> {
     /// assert_eq!(&captures["month"], "08");
     /// assert_eq!(&captures["day"], "05");
     /// ```
+    #[inline]
+    #[must_use]
     pub fn named_capture(self, name: impl AsRef<str>) -> PrettyRegex<Chain> {
         PrettyRegex::from(format!("(?P<{}>{})", name.as_ref(), self))
     }
@@ -772,6 +794,7 @@ impl<T> PrettyRegex<T> {
 /// assert!(regex.is_match("bar"));
 /// assert!(!regex.is_match("baz"));
 /// ```
+#[must_use]
 pub fn one_of<S>(options: &[S]) -> PrettyRegex<Chain>
 where
     S: Display,

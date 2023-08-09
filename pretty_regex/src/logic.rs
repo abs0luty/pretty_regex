@@ -1,6 +1,6 @@
 use std::ops::{BitAnd, BitXor, Not, Sub};
 
-use crate::{Ascii, Chain, CharClass, Custom, PrettyRegex, Standart, Text};
+use crate::{Ascii, Chain, CharClass, Custom, PrettyRegex, Standard, Text};
 
 impl<T> PrettyRegex<CharClass<T>> {
     /// Returns intersection between two character classes.
@@ -122,7 +122,7 @@ where
     regex.not()
 }
 
-impl Not for PrettyRegex<CharClass<Standart>> {
+impl Not for PrettyRegex<CharClass<Standard>> {
     type Output = Self;
 
     /// ```
