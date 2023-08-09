@@ -1,6 +1,6 @@
 [package]
 name = "pretty_regex"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["abs0luty"]
 description = "🧶 Elegant and readable way of writing regular expressions"
 readme = "../README.md"
@@ -8,6 +8,7 @@ repository = "https://github.com/abs0luty/pretty-regex"
 license = "MIT"
 keywords = ["regexpr", "regular", "regex", "human-readable"]
 categories = ["regex"]
+documentation = "https://docs.rs/pretty_regex"
 edition = "2021"
 
 [dependencies]
