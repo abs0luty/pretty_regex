@@ -55,13 +55,19 @@ impl<L, R> Sub<PrettyRegex<CharClass<R>>> for PrettyRegex<L> {
     }
 }
 
+pub fn not<T, M>(regex: PrettyRegex<T>) -> PrettyRegex<M>
+where
+    PrettyRegex<T>: Not<Output = PrettyRegex<M>>,
+{
+    regex.not()
+}
+
 impl Not for PrettyRegex<CharClass<Standart>> {
     type Output = Self;
 
     /// ```
-    /// # use std::ops::Not;
     /// # use pretty_regex::digit;
-    /// let regex = digit().not().to_regex_or_panic();
+    /// let regex = (!digit()).to_regex_or_panic();
     ///
     /// assert!(!regex.is_match("1"));
     /// assert!(regex.is_match("a"));

@@ -167,34 +167,12 @@ pub fn digit() -> PrettyRegex<CharClass<Standart>> {
     PrettyRegex::from(r"\d")
 }
 
-/// Matches non-digit character class (`\D`).
-///
-/// ```
-/// use pretty_regex::not_digit;
-///
-/// assert!(!not_digit().to_regex_or_panic().is_match("1"));
-/// assert!(!not_digit().to_regex_or_panic().is_match("2"));
-/// assert!(not_digit().to_regex_or_panic().is_match("a"));
-#[inline]
-#[must_use]
-pub fn not_digit() -> PrettyRegex<CharClass<Standart>> {
-    PrettyRegex::from(r"\D")
-}
-
 pub fn word() -> PrettyRegex<CharClass<Standart>> {
     PrettyRegex::from(r"\w")
 }
 
-pub fn not_word() -> PrettyRegex<CharClass<Standart>> {
-    PrettyRegex::from(r"\W")
-}
-
 pub fn whitespace() -> PrettyRegex<CharClass<Standart>> {
     PrettyRegex::from(r"\s")
-}
-
-pub fn not_whitespace() -> PrettyRegex<CharClass<Standart>> {
-    PrettyRegex::from(r"\S")
 }
 
 pub fn ascii_alphabetic() -> PrettyRegex<CharClass<Ascii>> {
@@ -467,15 +445,59 @@ impl<T> PrettyRegex<T> {
         PrettyRegex::from(format!("(?:{}){{{},{}}}", self, range.start, range.end))
     }
 
-    pub fn capture(self) -> PrettyRegex<Chain> {
+    /// Adds a capturnig group around a specific regular expression.
+    ///
+    /// # Example
+    ///
+    /// Let's say that we want to process simple date consisting of
+    /// month and day number. The problem is that we need to save the data
+    /// about these numbers to use it later. That's why we use captures!
+    ///
+    /// It's important that "unnamed" captures can only be matched using numbers, which
+    /// are sequenced from left to right. The number depends on the order of the regular
+    /// expression in the chain.
+    ///
+    /// ```
+    /// # use pretty_regex::{digit, just};
+    /// let regex = digit().repeats(2).unnamed_capture()
+    ///     .then(just("-"))
+    ///     .then(digit().repeats(2).unnamed_capture())
+    ///     .to_regex_or_panic();
+    ///
+    /// let captures = regex.captures("08-05").unwrap();
+    ///
+    /// assert_eq!(captures.get(1).unwrap().as_str(), "08");
+    /// assert_eq!(captures.get(2).unwrap().as_str(), "05");
+    /// ```
+    pub fn unnamed_capture(self) -> PrettyRegex<Chain> {
         PrettyRegex::from(format!("({})", self))
     }
 
+    /// Adds a named capturing groupd around a specific regular expression.
+    ///
+    /// # Example
+    ///
+    /// Let's say that we want to process simple date consisting of
+    /// month and day number. The problem is that we need to save the data
+    /// about these numbers to use it later. That's why we use captures!
+    /// See [`PrettyRegex::unnamed_capture`] for more details.
+    ///
+    /// Here we can give captures a specified names, to then match on them:
+    ///
     /// ```
-    /// use pretty_regex::just;
+    /// # use pretty_regex::{digit, just};
+    /// let regex = digit().repeats(2).named_capture("month")
+    ///     .then(just("-"))
+    ///     .then(digit().repeats(2).named_capture("day"))
+    ///     .to_regex_or_panic();
+    ///
+    /// let captures = regex.captures("08-05").unwrap();
+    ///
+    /// assert_eq!(&captures["month"], "08");
+    /// assert_eq!(&captures["day"], "05");
     /// ```
-    pub fn named_capture(self, name: &str) -> PrettyRegex<Chain> {
-        PrettyRegex::from(format!("(?P<{}>{})", name, self))
+    pub fn named_capture(self, name: impl AsRef<str>) -> PrettyRegex<Chain> {
+        PrettyRegex::from(format!("(?P<{}>{})", name.as_ref(), self))
     }
 }
 
