@@ -27,10 +27,13 @@ With `pretty_regex`
 <td>
   
 ```rs
-beginning()
-  .then(digit().repeats(4))
-  .then(just("-").then(digit().repeats(3)).optional())
-  .then(ending())
+digit()
+  .repeats(5)
+  .then(
+    just("-")
+     .then(digit().repeats(4))
+     .optional()
+  )
 ```
 
 </td>
@@ -70,13 +73,11 @@ rege(x(es)?|xps?)
 <td>
   
 ```rs
-beginning()
-  .then(just("rege"))
+just("rege")
   .then(one_of(&[
     just("x").then(just("es").optional()),
     just("xp").then(just("s").optional()),
   ]))
-  .then(ending())
 ```
 
 </td>
