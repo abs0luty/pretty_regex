@@ -27,7 +27,7 @@ With `pretty_regex`
 <td>
   
 ```rs
-digit() * 5 + just("-") + (digit() * 4).optional()
+digit() * 5 + (just("-") + digit() * 4).optional()
 ```
 
 </td>
@@ -43,8 +43,9 @@ digit() * 5 + just("-") + (digit() * 4).optional()
 <td>
   
 ```rs
-beginning() + (digit() * 4) +
-  (just("-") + digit() * 2) * 2 + ending()
+beginning() + digit() * 4
+            + (just("-") + digit() * 2) * 2
+            + ending()
 ```
 
 </td>
@@ -61,10 +62,8 @@ rege(x(es)?|xps?)
 <td>
   
 ```rs
-just("rege") + (
-  just("x") + just("es").optional() |
-  just("xp") + just("s").optional()
-)
+just("rege") + (just("x") + just("es").optional())
+             | (just("xp") + just("s").optional())
 ```
 
 </td>
