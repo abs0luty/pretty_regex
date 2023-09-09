@@ -27,13 +27,7 @@
 //! <td>
 //!
 //! ```ignore
-//! digit()
-//!  .repeats(5)
-//!  .then(
-//!    just("-")
-//!     .then(digit().repeats(4))
-//!     .optional()
-//!  )
+//! digit() * 5 + (just("-") + digit() * 4).optional()
 //! ```
 //!
 //! </td>
@@ -49,14 +43,9 @@
 //! <td>
 //!
 //! ```ignore
-//! beginning()
-//!   .then(digit().repeats(4))
-//!   .then(
-//!     just("-")
-//!       .then(digit().repeats(2))
-//!       .repeats(2)
-//!   )
-//!   .then(ending())
+//! beginning() + digit() * 4
+//!             + (just("-") + digit() * 2) * 2
+//!             + ending()
 //! ```
 //!
 //! </td>
@@ -73,11 +62,8 @@
 //! <td>
 //!
 //! ```ignore
-//! just("rege")
-//!   .then(one_of(&[
-//!     just("x").then(just("es").optional()),
-//!     just("xp").then(just("s").optional()),
-//!   ]))
+//! just("rege") + (just("x") + just("es").optional())
+//!              | (just("xp") + just("s").optional())
 //! ```
 //!
 //! </td>
