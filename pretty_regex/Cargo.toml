@@ -1,6 +1,6 @@
 [package]
 name = "pretty_regex"
-version = "1.0.2"
+version = "1.0.3"
 authors = ["abs0luty"]
 description = "🧶 Elegant and readable way of writing regular expressions"
 readme = "../README.md"
