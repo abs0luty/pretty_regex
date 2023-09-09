@@ -49,7 +49,7 @@ impl<T> PrettyRegex<CharClass<T>> {
 /// # Example
 ///
 /// ```
-/// # use pretty_regex::{within_char_range, symmetric_difference_between};
+/// # use pretty_regex::{within_char_range, logic::symmetric_difference_between};
 /// let regex = symmetric_difference_between(
 ///         within_char_range('a'..='f'),
 ///         within_char_range('c'..='z')

@@ -102,13 +102,12 @@ use unicode::Category;
 use std::{
     fmt::Display,
     marker::PhantomData,
-    ops::{Add, Range, RangeInclusive},
+    ops::{Add, BitOr, Mul, Range, RangeInclusive},
 };
 
 pub mod logic;
+pub mod prelude;
 pub mod unicode;
-
-pub use logic::*;
 
 /// Represents the state when regular expression is for a single-character ASCII class
 /// (the kind surrounded by colons and two layers of square brackets).
@@ -237,7 +236,7 @@ impl<L, R> Add<PrettyRegex<R>> for PrettyRegex<L> {
     /// assert!(!regex.is_match("ac"));
     /// ```
     fn add(self, rhs: PrettyRegex<R>) -> Self::Output {
-        PrettyRegex::from(format!("{}{}", self, rhs))
+        self.then(rhs)
     }
 }
 
@@ -601,6 +600,27 @@ pub fn text_ending() -> PrettyRegex<CharClass<Standard>> {
     PrettyRegex::from(r"\z")
 }
 
+impl<T> Mul<usize> for PrettyRegex<T> {
+    type Output = PrettyRegex<Quantifier>;
+
+    /// Matches the pattern a given amount of times.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use pretty_regex::just;
+    /// let regex = (just("foo") * 3)
+    ///     .to_regex_or_panic();
+    ///
+    /// assert!(regex.is_match("foofoofoo"));
+    /// assert!(!regex.is_match("foo"));
+    /// assert!(!regex.is_match("bar"));
+    /// ```
+    fn mul(self, rhs: usize) -> Self::Output {
+        self.repeats(rhs)
+    }
+}
+
 impl<T> PrettyRegex<T> {
     /// Matches the pattern a given amount of times.
     ///
@@ -806,4 +826,24 @@ where
     }
 
     PrettyRegex::from(regex_string)
+}
+
+impl<T, M> BitOr<PrettyRegex<M>> for PrettyRegex<T> {
+    type Output = PrettyRegex<Chain>;
+
+    /// Establishes an OR relationship between regular expressions.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use pretty_regex::{one_of, just};
+    /// let regex = (just("hi") | just("bar")).to_regex_or_panic();
+    ///
+    /// assert!(regex.is_match("hi"));
+    /// assert!(regex.is_match("bar"));
+    /// assert!(!regex.is_match("baz"));
+    /// ```
+    fn bitor(self, rhs: PrettyRegex<M>) -> Self::Output {
+        one_of(&[self.to_string(), rhs.to_string()])
+    }
 }
