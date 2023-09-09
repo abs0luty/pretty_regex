@@ -27,13 +27,7 @@ With `pretty_regex`
 <td>
   
 ```rs
-digit()
-  .repeats(5)
-  .then(
-    just("-")
-     .then(digit().repeats(4))
-     .optional()
-  )
+digit() * 5 + (just("-") + digit() * 4).optional()
 ```
 
 </td>
@@ -49,14 +43,9 @@ digit()
 <td>
   
 ```rs
-beginning()
-  .then(digit().repeats(4))
-  .then(
-    just("-")
-      .then(digit().repeats(2))
-      .repeats(2)
-  )
-  .then(ending())
+beginning() + digit() * 4
+            + (just("-") + digit() * 2) * 2
+            + ending()
 ```
 
 </td>
@@ -73,11 +62,8 @@ rege(x(es)?|xps?)
 <td>
   
 ```rs
-just("rege")
-  .then(one_of(&[
-    just("x").then(just("es").optional()),
-    just("xp").then(just("s").optional()),
-  ]))
+just("rege") + (just("x") + just("es").optional())
+             | (just("xp") + just("s").optional())
 ```
 
 </td>
@@ -87,13 +73,12 @@ just("rege")
 
 # How to use the crate?
 
-To convert a `PrettyRegex` struct which is constructed using all these `then`, `one_of`, `beginning`, `digit`, etc. functions into 
-a real regex (from `regex` crate), you can call `to_regex` or `to_regex_or_panic`: 
+To convert a `PrettyRegex` into a regex from `regex` crate, you can call `to_regex` or `to_regex_or_panic`: 
 
 ```rs
 use pretty_regex::digit;
 
-let regex = digit().to_regex_or_panic();
+let regex = (digit() + ascii_alphabetic().optional()).to_regex_or_panic();
 
 assert!(regex.is_match("3"));
 ```
