@@ -124,7 +124,14 @@ pub struct Chain;
 /// These expressions are greedy by default and can be converted to a lazy match.
 pub struct Quantifier;
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PrettyRegex<T = Chain>(String, PhantomData<T>);
+
+impl<T> Default for PrettyRegex<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl<T> PrettyRegex<T> {
     /// Creates a new empty [`PrettyRegex`].
@@ -136,7 +143,6 @@ impl<T> PrettyRegex<T> {
 
     /// Converts the [`PrettyRegex`] into a real [`Regex`].
     #[inline]
-    #[must_use]
     pub fn to_regex(&self) -> Result<Regex, regex::Error> {
         Regex::new(&self.0)
     }
@@ -244,7 +250,7 @@ impl<T> Display for PrettyRegex<T> {
 #[inline]
 #[must_use]
 pub fn just(text: impl Into<String>) -> PrettyRegex<Text> {
-    PrettyRegex::from(format!("(?:{})", escape(&*text.into())))
+    PrettyRegex::from(format!("(?:{})", escape(&text.into())))
 }
 
 /// Makes regex from unescaped text. It allows to add a regex string directly into a
@@ -462,7 +468,7 @@ where
 {
     PrettyRegex::from(format!(
         "[{}]",
-        set.into_iter().map(|c| c.to_string()).collect::<String>()
+        set.iter().map(|c| c.to_string()).collect::<String>()
     ))
 }
 
@@ -484,7 +490,7 @@ where
 {
     PrettyRegex::from(format!(
         "[^{}]",
-        set.into_iter().map(|c| c.to_string()).collect::<String>()
+        set.iter().map(|c| c.to_string()).collect::<String>()
     ))
 }
 
@@ -807,8 +813,8 @@ where
 {
     let mut regex_string = format!("{}", options[0]);
 
-    for idx in 1..options.len() {
-        regex_string = format!("{}|{}", regex_string, options[idx])
+    for option in options.iter().skip(1) {
+        regex_string = format!("{regex_string}|{option}");
     }
 
     PrettyRegex::from(regex_string)

@@ -109,7 +109,7 @@ impl<L, R> Sub<PrettyRegex<CharClass<R>>> for PrettyRegex<L> {
 /// Matches everything, except for what can be matched by an original regex.
 ///
 /// ```
-/// # use pretty_regex::{not, digit};
+/// # use pretty_regex::{logic::not, digit};
 /// let not_digit = not(digit()).to_regex_or_panic();
 ///
 /// assert!(!not_digit.is_match("1"));
@@ -172,7 +172,7 @@ impl Not for PrettyRegex<CharClass<Custom>> {
         {
             PrettyRegex::from(self.0.replace("[^", "["))
         } else {
-            PrettyRegex::from(self.0.replace("[", "[^"))
+            PrettyRegex::from(self.0.replace('[', "[^"))
         }
     }
 }
@@ -202,9 +202,7 @@ impl Not for PrettyRegex<Text> {
         PrettyRegex::from(
             self.0
                 .chars()
-                .into_iter()
-                .map(|c| format!("[^{}]", c))
-                .collect::<String>(),
+                .fold("".to_owned(), |s, c| format!("{s}[^{c}]")),
         )
     }
 }
